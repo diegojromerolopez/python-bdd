@@ -3,6 +3,7 @@
     bdd.py
     An advanced Binary Decision Diagram library for Python
     :copyright: (c) 2011 by Christian Hans
+    License GPL v2
 """
 
 class Vertex(object):
