@@ -223,29 +223,40 @@ class BDD(object):
     def to_png(self, filename=None):
         if not filename:
             filename = "bdd.png"
+        # Abstract representation in dot format of the BDD 
         graph = pydot.Dot(graph_type='digraph')
         graph.edges = {}
-        def _traverse(v, levels):
+        
+        # Obtains the node name (it's useful if the tree is not reduced)
+        def get_node_name(v, path_name):
+            """Obtains the node name: if BDD is reduced it gets the id, else returns the node path-from-root name"""
+            if v.id is not None:
+                return v.id
+            return path_name
+        
+        # Generates the graph
+        def _traverse(v, levels, path_name):
+            """Traverse all nodes and creates a dot graph"""
             if v.index!=None:
                 levels[v.index-1].append(v)
-                _traverse(v.low, levels)
-                _traverse(v.high, levels)
+                _traverse(v.low, levels, path_name+"L")
+                _traverse(v.high, levels, path_name+"H")
                 if not hasattr(v,"visited") or not v.visited:
-					v.visited = True
-					v.node = pydot.Node(v.id)
-					graph.add_edge(pydot.Edge(v.node, v.low.node, style="dashed", arrowtype="normal", dir="forward"))
-					graph.add_edge(pydot.Edge(v.node, v.high.node, arrowtype="normal", dir="forward"))
+                    v.visited = True
+                    v.node = pydot.Node(get_node_name(v, path_name))
+                    graph.add_edge(pydot.Edge(v.node, v.low.node, style="dashed", arrowtype="normal", dir="forward"))
+                    graph.add_edge(pydot.Edge(v.node, v.high.node, arrowtype="normal", dir="forward"))
             elif v.value!=None:
                 levels[len(levels)-1].append(v)
                 if not hasattr(v,"visited") or not v.visited:
                     v.visited = True
-                    v.node = pydot.Node("{0}({1})".format(v.id,v.value), shape="rounded")
-                    #print v.id
+                    v.node = pydot.Node("{0} ({1})".format(get_node_name(v,path_name),v.value), shape="box", style="rounded")
 
         levels = []
         for i in xrange(self.n+1):
             levels.append([])
-
-        _traverse(self.root, levels)
+        
+        path_name = "R"
+        _traverse(self.root, levels, path_name)
         graph.write_png(filename)
         return levels
