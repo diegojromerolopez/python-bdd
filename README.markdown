@@ -23,4 +23,4 @@ Example
     print bdd3
     
 LICENSE
-GPL2 see the license.txt file.
+This project has been forked from https://github.com/e-mux/python-bdd. The creator stated that the code has the GPL2 license in https://github.com/e-mux/python-bdd/issues/1. This forked code has the license GPL V2 as well. See the license.txt file for more information.
