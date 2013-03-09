@@ -1,9 +1,9 @@
 from bdd import *
 
-def andor(a, b):
+def boolean_function(a, b):
         return (a and b)
 
-bdd1 = BDD(andor, reduce=True)
+bdd1 = BDD(boolean_function, reduce=True)
 print bdd1.represents(andor)
 
 print repr(bdd1)
