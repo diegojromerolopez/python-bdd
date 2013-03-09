@@ -21,3 +21,6 @@ Example
     def tand(a, b): return a and b
     bdd3 = bdd1.apply(bdd2, tand)
     print bdd3
+    
+LICENSE
+GPL2 see the license.txt file.
