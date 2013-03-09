@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 """
     bdd.py
-
     An advanced Binary Decision Diagram library for Python
-
     :copyright: (c) 2011 by Christian Hans
 """
 
 from math import log
 from inspect import getargspec
 from sys import getsizeof
+from vertex import Vertex
+import pydot
 
 class BDD(object):
     n = 0
@@ -219,31 +219,33 @@ class BDD(object):
                 return v.__repr__()
         return '<BDD n=' + str(self.n) + ',\n' + _bdd_to_string(self.root) + '>'
 
-class Vertex(object):
-    id = None
-    index = None
-    value = None
-    low = None
-    high = None
 
-    def __init__(self, index=None, value=None, low=None, high=None):
-        self.index = index
-        self.value = value
-        self.low = low
-        self.high = high
+    def to_png(self, filename=None):
+        if not filename:
+            filename = "bdd.png"
+        graph = pydot.Dot(graph_type='digraph')
+        graph.edges = {}
+        def _traverse(v, levels):
+            if v.index!=None:
+                levels[v.index-1].append(v)
+                _traverse(v.low, levels)
+                _traverse(v.high, levels)
+                if not hasattr(v,"visited") or not v.visited:
+					v.visited = True
+					v.node = pydot.Node(v.id)
+					graph.add_edge(pydot.Edge(v.node, v.low.node, style="dashed", arrowtype="normal", dir="forward"))
+					graph.add_edge(pydot.Edge(v.node, v.high.node, arrowtype="normal", dir="forward"))
+            elif v.value!=None:
+                levels[len(levels)-1].append(v)
+                if not hasattr(v,"visited") or not v.visited:
+                    v.visited = True
+                    v.node = pydot.Node("{0}({1})".format(v.id,v.value), shape="rounded")
+                    #print v.id
 
-    def __eq__(self, other):
-        if self.index!=None and other.index!=None:
-            return self.index==other.index
-        elif self.value!=None and other.value!=None:
-            return self.value==other.value
-        else:
-            return False
+        levels = []
+        for i in xrange(self.n+1):
+            levels.append([])
 
-    def __repr__(self):
-        if self.index!=None:
-            return '<Vertex ' + str(self.index) + '>'
-        elif self.value!=None:
-            return '<Vertex ' + str(self.value) + '>'
-        else:
-            return '<Vertex>'
+        _traverse(self.root, levels)
+        graph.write_png(filename)
+        return levels
