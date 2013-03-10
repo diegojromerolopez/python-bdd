@@ -3,11 +3,11 @@ from bdd import *
 def boolean_function(a, b):
         return (a and b)
 
-bdd1 = BDD(boolean_function, reduce=False)
+bdd1 = BDD(boolean_function, reduce=True)
 print bdd1.represents(boolean_function)
 
 print repr(bdd1)
-bdd1.to_png(filename="example.png")
+bdd1.to_png()
 
 #print "000"
 #print bdd1.eval(False, False, False)

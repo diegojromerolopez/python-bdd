@@ -12,7 +12,10 @@ from sys import getsizeof
 from vertex import Vertex
 import pydot
 
+########################################################################
+## Binary Decision Diagram class
 class BDD(object):
+    
     # Function variable names (used to construct the dot graph)
     variable_names = []
     
@@ -31,6 +34,9 @@ class BDD(object):
     # TODO: move to __init__
     _vcount = 0
 
+
+    ####################################################################
+    ## Constructor
     def __init__(self, function=None, values=None, reduce=True):
 
         def generate_tree_function(function, path=[]):
@@ -78,6 +84,9 @@ class BDD(object):
                 if reduce:
                     self.reduce()
 
+
+    ####################################################################
+    ## Evaluate the boolean function using truth arguments.
     def eval(self, *args):
         def _eval(v, *args):
             if v.index!=None:
@@ -94,6 +103,9 @@ class BDD(object):
 
         return _eval(self.root, *args)
 
+    
+    ####################################################################
+    ## Traverses the BDD
     def traverse(self):
         def _traverse(v, levels):
             if v.index!=None:
@@ -109,6 +121,9 @@ class BDD(object):
         _traverse(self.root, levels)
         return levels
 
+
+    ####################################################################
+    ## Reduces the BDD deleting redundant nodes and edges
     def reduce(self):
         result = []
         nextid = 0
@@ -156,6 +171,9 @@ class BDD(object):
         # Update reference to root vertex (alwayes the last entry in result)
         self.root = result[-1]
 
+
+    ####################################################################
+    ## Apply operation
     def apply(self, bdd, function):
         cache = {}
 
@@ -192,7 +210,9 @@ class BDD(object):
         new_bdd.reduce()
         return new_bdd
 
-    # Returns True if the BDD represents function
+
+    ####################################################################
+    ## Returns True if the BDD represents the boolean function
     def represents(self, function):
         def _represents(args=[]):
             args_len = len(args)
@@ -206,6 +226,9 @@ class BDD(object):
         else:
             return False
 
+
+    ####################################################################
+    ## Equal to operator
     def __eq__(self, other):
         def equal(x1, x2):
             return x1==x2
@@ -213,6 +236,9 @@ class BDD(object):
         return (isinstance(other, BDD) and
             self.apply(other, equal).root == Vertex(value=True))
 
+
+    ####################################################################
+    ## Gets the number of nodes of the BDD
     def __len__(self):
         def _count_bdd(v):
             if v.index!=None:
@@ -221,6 +247,9 @@ class BDD(object):
                 return 1
         return _count_bdd(self.root)
 
+
+    ####################################################################
+    ## Gets the memory consumed by the BDD
     def __sizeof__(self):
         def _sizeof_bdd(v):
             if v.index!=None:
@@ -229,6 +258,9 @@ class BDD(object):
                 return getsizeof(v)
         return _sizeof_bdd(self.root)
 
+
+    ####################################################################
+    ## Converts the BDD to a string
     def __repr__(self):
         def _bdd_to_string(v):
             if v.index!=None:
@@ -238,15 +270,16 @@ class BDD(object):
         return '<BDD n=' + str(self.n) + ',\n' + _bdd_to_string(self.root) + '>'
 
 
-    def to_png(self, filename=None):
-        if not filename:
-            filename = "{0}.png".format(self.name)
+    ####################################################################
+    ## Creates a dot graph of the BDD
+    def get_dot_graph(self):
+
         # Abstract representation in dot format of the BDD 
         graph = pydot.Dot(graph_type='digraph', label=self.name)
         graph.edges = {}
         
         bdd = self
-        # Obtains the node name (it's useful if the tree is not reduced)
+        # Obtains the unique node name (better than using a rand())
         def get_node_name(v, path_name):
             """Obtains the node name: if BDD is reduced it gets the id, else returns the node path-from-root name"""
             if v.index is not None:
@@ -256,31 +289,49 @@ class BDD(object):
             if v.id is not None:
                 return v.id
             return path_name
+            
+        # Obtains the node label that is the variable name that the node represents
+        def get_node_label(v):
+            """Obtains the node variable name"""
+            # If it's not a leaf, get the variable name associated
+            if v.index is not None:
+                return bdd.variable_names[v.index-1]
+            # If it's a leaf, get 1/0 from True/False, resp.
+            if v.value is not None:
+                if v.value:
+                    return "1"
+                return "0"
+            raise ValueError("There is no label for this node!")
         
         # Generates the graph
-        def _traverse(v, levels, path_name):
+        def _create_graph(v, path_name):
             """Traverse all nodes and creates a dot graph"""
             if v.index!=None:
-                levels[v.index-1].append(v)
-                _traverse(v.low, levels, path_name+"L")
-                _traverse(v.high, levels, path_name+"H")
+                _create_graph(v.low, path_name+"L")
+                _create_graph(v.high, path_name+"H")
                 if not hasattr(v,"visited") or not v.visited:
                     v.visited = True
-                    v.node = pydot.Node(name=get_node_name(v, path_name))
+                    v.node = pydot.Node(name=get_node_name(v,path_name), label=get_node_label(v))
+                    graph.add_node(v.node)
                     graph.add_edge(pydot.Edge(v.node, v.low.node, style="dashed", arrowtype="normal", dir="forward"))
                     graph.add_edge(pydot.Edge(v.node, v.high.node, arrowtype="normal", dir="forward"))
             elif v.value!=None:
-                levels[len(levels)-1].append(v)
                 if not hasattr(v,"visited") or not v.visited:
                     v.visited = True
-                    v.node = pydot.Node(name=get_node_name(v,path_name), style="filled", fillcolor="red")
-
-        levels = []
-        for i in xrange(self.n+1):
-            levels.append([])
+                    v.node = pydot.Node(name=get_node_name(v,path_name), label=get_node_label(v),  shape="box")
+                    graph.add_node(v.node)
         
         path_name = "R"
-        _traverse(self.root, levels, path_name)
-        graph.write_png(filename)
+        _create_graph(self.root, path_name)
+        return graph
+    
+    
+    ####################################################################
+    ## Creates a PNG file with a graph of the BDD        
+    def to_png(self, filename=None):
+        if not filename:
+            filename = "{0}.png".format(self.name)
         
-        return levels
+        graph = self.get_dot_graph()
+        graph.write_png(filename)
+
