@@ -182,10 +182,13 @@ class BDD(object):
             key = str(v1.id) + ' ' + str(v2.id)
             if key in cache:
                 return cache[key]
-
+            
+            # Result vertex
             u = Vertex()
             cache[key] = u
-
+            
+            # If the vertices are both leafs,
+            # apply the boolean function to them
             if v1.value!=None and v2.value!=None:
                 u.value = f(v1.value, v2.value)
             else:
@@ -207,8 +210,23 @@ class BDD(object):
         new_bdd = BDD()
         new_bdd.n = self.n
         new_bdd.root = _apply(self.root, bdd.root, function)
+        new_bdd.variable_names = list(self.variable_names)
         new_bdd.reduce()
         return new_bdd
+
+    ####################################################################
+    ## Apply operation
+    
+    def mk(self, i, l, h):
+        """Exists a node v with v.index=i, v.low=l, and v.high=h?"""
+        if l==h:
+            return l
+        elif self.H.exists(i,l,h):
+            return self.H.get(i,l,h)
+        else:
+            u = Vertex(index=i, low=l, high=h)
+            self.H.add(i,l,h,u)
+            return u
 
 
     ####################################################################

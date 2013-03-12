@@ -1,29 +1,36 @@
 from bdd import *
 
-def boolean_function(a, b):
+def f_not(a):
+        return (not a)
+
+def f_or(a, b):
+        """a or b"""
+        return (a or b)
+
+def f_and(a, b):
+        """a and b"""
         return (a and b)
 
-bdd1 = BDD(boolean_function, reduce=True)
-print bdd1.represents(boolean_function)
+def f_implies(a, b, c):
+        """not a or b"""
+        return (not a or b)
 
-print repr(bdd1)
-bdd1.to_png()
+def f1(a, b, x):
+        return a or b
 
-#print "000"
-#print bdd1.eval(False, False, False)
-#print bdd1.eval(False, False, True)
-#print bdd1.eval(False, True, False)
-#print bdd1.eval(False, True, True)
+bdd1 = BDD(f1, reduce=True)
+bdd1.to_png(filename="bdd1.png")
 
-#print "100"
-#print bdd1.eval(True, False, False)
-#print bdd1.eval(True, False, True)
-#print bdd1.eval(True, True, False)
-#print bdd1.eval(True, True, True)
+def f2(a, b, x):
+        return x or b
 
-#bdd2 = BDD(values = [True, False, True, True])
-#print len(bdd2)
+bdd2 = BDD(f2, reduce=True)
+bdd2.to_png(filename="bdd2.png")
 
-#def tand(a, b): return a and b
-#bdd3 = bdd1.apply(bdd2, tand)
-#print bdd3
+bdd3 = bdd1.apply(bdd2,f_and)
+bdd3.to_png(filename="bdd3.png")
+
+def f_test(a,b,x):
+        return (a or b) and (x or b)
+
+print bdd3.represents(f_test)
