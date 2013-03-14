@@ -176,7 +176,12 @@ class BDD(object):
     ## Apply operation
     def apply(self, bdd, function):
         cache = {}
-
+        
+        true = Vertex(value=True)
+        false = Vertex(value=False)
+        leafs = {True:true, False:false}
+        
+        
         def _apply(v1, v2, f):
             # Check if v1 and v2 have already been calculated
             key = str(v1.id) + ' ' + str(v2.id)
@@ -185,49 +190,36 @@ class BDD(object):
             
             # Result vertex
             u = Vertex()
-            cache[key] = u
             
             # If the vertices are both leafs,
             # apply the boolean function to them
             if v1.value!=None and v2.value!=None:
-                u.value = f(v1.value, v2.value)
+                u = leafs[f(v1.value, v2.value)]
+                cache[key] = u
+                return u
+            
+            if v1.value==None and (v2.value!=None or v1.index<v2.index):
+                u.index = v1.index
+                u.low = _apply(v1.low, v2, f)
+                u.high = _apply(v1.high, v2, f)
+            elif v1.value!=None or v1.index>v2.index:
+                u.index = v2.index
+                u.low = _apply(v1, v2.low, f)
+                u.high = _apply(v1, v2.high, f)
             else:
-                if v1.index!=None and (v2.value!=None or v1.index<v2.index):
-                    u.index = v1.index
-                    u.low = _apply(v1.low, v2, f)
-                    u.high = _apply(v1.high, v2, f)
-                elif v1.value!=None or v1.index>v2.index:
-                    u.index = v2.index
-                    u.low = _apply(v1, v2.low, f)
-                    u.high = _apply(v1, v2.high, f)
-                else:
-                    u.index = v1.index
-                    u.low = _apply(v1.low, v2.low, f)
-                    u.high = _apply(v1.high, v2.high, f)
-
+                u.index = v1.index
+                u.low = _apply(v1.low, v2.low, f)
+                u.high = _apply(v1.high, v2.high, f)
+            
+            cache[key] = u
             return u
 
         new_bdd = BDD()
         new_bdd.n = self.n
         new_bdd.root = _apply(self.root, bdd.root, function)
         new_bdd.variable_names = list(self.variable_names)
-        new_bdd.reduce()
+        #new_bdd.reduce()
         return new_bdd
-
-    ####################################################################
-    ## Apply operation
-    
-    def mk(self, i, l, h):
-        """Exists a node v with v.index=i, v.low=l, and v.high=h?"""
-        if l==h:
-            return l
-        elif self.H.exists(i,l,h):
-            return self.H.get(i,l,h)
-        else:
-            u = Vertex(index=i, low=l, high=h)
-            self.H.add(i,l,h,u)
-            return u
-
 
     ####################################################################
     ## Returns True if the BDD represents the boolean function
