@@ -180,15 +180,13 @@ class BDD(object):
         self.root = result[-1]
         # this BDD is now reduced
         self.is_reduced = True
-        self.to_png(filename="xxx_bdd1.png")
-
 
 
     ####################################################################
     ## Apply operation
     def apply(self, bdd, function, reduce=True):
         # If the trees are not reduced, we reduce them first
-        if not bdd.is_reduced:
+        if  not bdd.is_reduced:
             bdd.reduce()
         if not self.is_reduced:
             self.reduce()

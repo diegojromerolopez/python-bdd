@@ -22,7 +22,7 @@ REDUCE = False
 APPLY_REDUCE = False
 
 bdd1 = BDD(f1, reduce=REDUCE)
-bdd1.to_png(filename="non-reduced_bdd1.png")
+bdd1.to_png(filename="bdd1.png")
 print "Is BDD1 (a or b)? {0}".format(bdd1.represents(f1))
 
 def f2(a, b, x):
