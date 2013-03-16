@@ -12,12 +12,16 @@ class Vertex(object):
     value = None
     low = None
     high = None
+    lparents = []
+    hparents = []
 
-    def __init__(self, index=None, value=None, low=None, high=None):
+    def __init__(self, index=None, value=None, low=None, high=None, lparents=[], hparents=[]):
         self.index = index
         self.value = value
         self.low = low
         self.high = high
+        lparents = []
+        hparents = []
 
     def __eq__(self, other):
         if self.index!=None and other.index!=None:
@@ -34,3 +38,18 @@ class Vertex(object):
             return '<Vertex ' + str(self.value) + '>'
         else:
             return '<Vertex>'
+
+    def optimize(self):
+        if self.value!=None:
+            return False
+        if self.low != self.high:
+            return False
+        # At this point, v has only one child (self.low = self.high)
+        s_child = self.low
+        # For each parent, erases the link between parent and v
+        # and creates a new link between parent and child of v.
+        for lparent in self.lparents:
+            lparent.low = s_child
+        for hparent in self.hparents:
+            hparent.low = s_child
+        return True

@@ -34,6 +34,8 @@ class BDD(object):
     # TODO: move to __init__
     _vcount = 0
 
+    # Is the BDD reduced
+    is_reduced = False
 
     ####################################################################
     ## Constructor
@@ -125,6 +127,9 @@ class BDD(object):
     ####################################################################
     ## Reduces the BDD deleting redundant nodes and edges
     def reduce(self):
+        if self.is_reduced:
+            return self
+        
         result = []
         nextid = 0
 
@@ -165,22 +170,34 @@ class BDD(object):
 
                 # Update references
                 if x.index!=None:
+                    # Here's the core of the reduction method
+                    # If there is a redundant node whose id is equal to one of its descendants' id
+                    # we get the descendant, so we skip the redundant node
                     x.low = result[x.low.id]
                     x.high = result[x.high.id]
 
         # Update reference to root vertex (alwayes the last entry in result)
         self.root = result[-1]
+        # this BDD is now reduced
+        self.is_reduced = True
+        self.to_png(filename="xxx_bdd1.png")
+
 
 
     ####################################################################
     ## Apply operation
-    def apply(self, bdd, function):
-        cache = {}
+    def apply(self, bdd, function, reduce=True):
+        # If the trees are not reduced, we reduce them first
+        if not bdd.is_reduced:
+            bdd.reduce()
+        if not self.is_reduced:
+            self.reduce()
         
+        cache = {}
+        # Leafs
         true = Vertex(value=True)
         false = Vertex(value=False)
         leafs = {True:true, False:false}
-        
         
         def _apply(v1, v2, f):
             # Check if v1 and v2 have already been calculated
@@ -195,9 +212,9 @@ class BDD(object):
             # apply the boolean function to them
             if v1.value!=None and v2.value!=None:
                 u = leafs[f(v1.value, v2.value)]
+                #u = Vertex(value=f(v1.value, v2.value))
                 cache[key] = u
                 return u
-            
             if v1.value==None and (v2.value!=None or v1.index<v2.index):
                 u.index = v1.index
                 u.low = _apply(v1.low, v2, f)
@@ -211,6 +228,10 @@ class BDD(object):
                 u.low = _apply(v1.low, v2.low, f)
                 u.high = _apply(v1.high, v2.high, f)
             
+            #u.low.lparents.append(u)
+            #u.high.hparents.append(u)
+            #u.low.optimize()
+            #u.high.optimize()
             cache[key] = u
             return u
 
@@ -218,7 +239,8 @@ class BDD(object):
         new_bdd.n = self.n
         new_bdd.root = _apply(self.root, bdd.root, function)
         new_bdd.variable_names = list(self.variable_names)
-        #new_bdd.reduce()
+        if reduce:
+            new_bdd.reduce()
         return new_bdd
 
     ####################################################################
@@ -287,6 +309,7 @@ class BDD(object):
         # Abstract representation in dot format of the BDD 
         graph = pydot.Dot(graph_type='digraph', label=self.name)
         graph.edges = {}
+        visited_vertices = []
         
         bdd = self
         # Obtains the unique node name (better than using a rand())
@@ -321,6 +344,7 @@ class BDD(object):
                 _create_graph(v.high, path_name+"H")
                 if not hasattr(v,"visited") or not v.visited:
                     v.visited = True
+                    visited_vertices.append(v)
                     v.node = pydot.Node(name=get_node_name(v,path_name), label=get_node_label(v))
                     graph.add_node(v.node)
                     graph.add_edge(pydot.Edge(v.node, v.low.node, style="dashed", arrowtype="normal", dir="forward"))
@@ -328,11 +352,14 @@ class BDD(object):
             elif v.value!=None:
                 if not hasattr(v,"visited") or not v.visited:
                     v.visited = True
+                    visited_vertices.append(v)
                     v.node = pydot.Node(name=get_node_name(v,path_name), label=get_node_label(v),  shape="box")
                     graph.add_node(v.node)
         
         path_name = "R"
         _create_graph(self.root, path_name)
+        for visited_vertex in visited_vertices:
+            visited_vertex.visited = False
         return graph
     
     
