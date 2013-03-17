@@ -10,6 +10,9 @@ from math import log
 from inspect import getargspec
 from sys import getsizeof
 from vertex import Vertex
+from uuid import uuid4
+import re
+
 import pydot
 
 ########################################################################
@@ -41,6 +44,27 @@ class BDD(object):
     ## Constructor
     def __init__(self, function=None, values=None, reduce=True):
 
+        ## Given a formula in a string evaluable by Python, gets the function
+        ## object that represents it.
+        def get_func(formula_str):
+            """Gets a function object given a logic formular y Python format"""
+            # Gets the arguments of the formula
+            argument_list = re.sub(r'and|or|not|\(|\)', r'', formula_str)
+            argument_list = re.sub(r'\s+',r' ', argument_list).split(" ")
+            argument_list_h = {}
+            for a in argument_list:
+                argument_list_h[a] = True
+            argument_list = argument_list_h.keys()
+            # Gets a str separated by commas (arguments of the function)
+            arguments_str = ', '.join(argument_list)
+            parameters_in_function_str = re.sub(r'(\s+|,)+',r'_', arguments_str)
+            uuid = str(uuid4()).replace("-","")
+            function_name = "formula_{0}_with_{1}_params_{2}".format(uuid,len(argument_list),parameters_in_function_str)
+            exec "def "+function_name+"("+arguments_str+"):   return "+formula_str in globals()
+            # Returns the object function
+            return eval(function_name)
+
+
         def generate_tree_function(function, path=[]):
             path_len = len(path)
             if path_len<self.n:
@@ -65,6 +89,8 @@ class BDD(object):
                 return v
 
         if function:
+            if type(function)==str or type(function)==unicode:
+                function = get_func(function)
             self.function = function
             self.name = function.func_name
             self.variable_names = getargspec(function).args
@@ -72,9 +98,9 @@ class BDD(object):
             self.root = generate_tree_function(function)
             if reduce:
                 self.reduce()
+        
         elif values:
             values_count = len(values)
-
             if values_count%2!=0:
                 raise ValueError('Number of values must be a power of 2')
             else:

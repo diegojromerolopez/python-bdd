@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from bdd import *
 
 def f_not(a):
