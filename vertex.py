@@ -39,7 +39,8 @@ class Vertex(object):
         else:
             return '<Vertex>'
 
-    def optimize(self):
+    ## Erases redundancy: no variable node v has identical low and high child. 
+    def erase_redundancy(self):
         if self.value!=None:
             return False
         if self.low != self.high:
@@ -53,3 +54,9 @@ class Vertex(object):
         for hparent in self.hparents:
             hparent.low = s_child
         return True
+    
+    def erase_children_redundancy(self):
+        u.low.lparents.append(u)
+        u.high.hparents.append(u)
+        u.low.erase_redundancy()
+        u.high.erase_redundancy()

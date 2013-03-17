@@ -181,7 +181,6 @@ class BDD(object):
         # this BDD is now reduced
         self.is_reduced = True
 
-
     ####################################################################
     ## Apply operation
     def apply(self, bdd, function, reduce=True):
@@ -213,23 +212,24 @@ class BDD(object):
                 #u = Vertex(value=f(v1.value, v2.value))
                 cache[key] = u
                 return u
+            # v1.index < v2.index
             if v1.value==None and (v2.value!=None or v1.index<v2.index):
                 u.index = v1.index
                 u.low = _apply(v1.low, v2, f)
                 u.high = _apply(v1.high, v2, f)
+            # v1.index > v2.index 
             elif v1.value!=None or v1.index>v2.index:
                 u.index = v2.index
                 u.low = _apply(v1, v2.low, f)
                 u.high = _apply(v1, v2.high, f)
+            # v1.index == v2.index
             else:
                 u.index = v1.index
                 u.low = _apply(v1.low, v2.low, f)
                 u.high = _apply(v1.high, v2.high, f)
             
-            #u.low.lparents.append(u)
-            #u.high.hparents.append(u)
-            #u.low.optimize()
-            #u.high.optimize()
+            u.erase_children_redundancy()
+            
             cache[key] = u
             return u
 
