@@ -18,13 +18,14 @@ def f_implies(a, b, c):
         return (not a or b)
 
 def f1(a, b, x):
-        return a or b
+        return a or b or x
 
-REDUCE = False
+REDUCE = True
 APPLY_REDUCE = False
 
 bdd1 = BDD(f1, reduce=REDUCE)
 bdd1.to_png(filename="bdd1.png")
+print bdd1.traverse()
 print "Is BDD1 (a or b)? {0}".format(bdd1.represents(f1))
 
 def f2(a, b, x):

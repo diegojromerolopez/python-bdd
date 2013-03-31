@@ -14,6 +14,7 @@ class Vertex(object):
     high = None
     lparents = []
     hparents = []
+    visited = False
 
     def __init__(self, index=None, value=None, low=None, high=None, lparents=[], hparents=[]):
         self.index = index
@@ -33,9 +34,9 @@ class Vertex(object):
 
     def __repr__(self):
         if self.index!=None:
-            return '<Vertex ' + str(self.index) + '>'
+            return '<Vertex {0}>'.format(self.index)
         elif self.value!=None:
-            return '<Vertex ' + str(self.value) + '>'
+            return '<Vertex {0}>'.format(self.value)
         else:
             return '<Vertex>'
 
@@ -56,7 +57,7 @@ class Vertex(object):
         return True
     
     def erase_children_redundancy(self):
-        u.low.lparents.append(u)
-        u.high.hparents.append(u)
-        u.low.erase_redundancy()
-        u.high.erase_redundancy()
+        self.low.lparents.append(self)
+        self.high.hparents.append(self)
+        self.low.erase_redundancy()
+        self.high.erase_redundancy()

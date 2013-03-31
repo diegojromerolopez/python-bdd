@@ -39,6 +39,9 @@ class BDD(object):
 
     # Is the BDD reduced
     is_reduced = False
+    
+    # Vertices in an array
+    vertices = []
 
     ####################################################################
     ## Constructor
@@ -112,6 +115,9 @@ class BDD(object):
                 if reduce:
                     self.reduce()
 
+    def reset(self):
+        for v in self.vertices:
+            v.visited = False
 
     ####################################################################
     ## Evaluate the boolean function using truth arguments.
@@ -204,6 +210,18 @@ class BDD(object):
 
         # Update reference to root vertex (alwayes the last entry in result)
         self.root = result[-1]
+        result_false = result[1]
+        result_true = result[0]
+        result[0] = result_false
+        result[1] = result_true
+        result[0].id=0
+        result[1].id=1
+        self.vertices = result
+        for v in self.vertices:
+            v.visited = False
+            v.i = self.n
+            if v.index != None:
+                v.i = v.index-1
         # this BDD is now reduced
         self.is_reduced = True
 
@@ -282,6 +300,19 @@ class BDD(object):
         else:
             return False
 
+    ####################################################################
+    ## Obtains the node label that is the variable name that the node represents
+    def _get_node_label(self, v):
+        """Obtains the node variable name"""
+        # If it's not a leaf, get the variable name associated
+        if v.index is not None:
+            return self.variable_names[v.index-1]
+        # If it's a leaf, get 1/0 from True/False, resp.
+        if v.value is not None:
+            if v.value:
+                return "1"
+            return "0"
+        raise ValueError("There is no label for this node!")
 
     ####################################################################
     ## Equal to operator
@@ -329,7 +360,7 @@ class BDD(object):
     ####################################################################
     ## Creates a dot graph of the BDD
     def get_dot_graph(self):
-
+        self.reset()
         # Abstract representation in dot format of the BDD 
         graph = pydot.Dot(graph_type='digraph', label=self.name)
         graph.edges = {}
@@ -346,20 +377,8 @@ class BDD(object):
             if v.id is not None:
                 return v.id
             return path_name
-            
-        # Obtains the node label that is the variable name that the node represents
-        def get_node_label(v):
-            """Obtains the node variable name"""
-            # If it's not a leaf, get the variable name associated
-            if v.index is not None:
-                return bdd.variable_names[v.index-1]
-            # If it's a leaf, get 1/0 from True/False, resp.
-            if v.value is not None:
-                if v.value:
-                    return "1"
-                return "0"
-            raise ValueError("There is no label for this node!")
-        
+
+
         # Generates the graph
         def _create_graph(v, path_name):
             """Traverse all nodes and creates a dot graph"""
@@ -369,7 +388,7 @@ class BDD(object):
                 if not hasattr(v,"visited") or not v.visited:
                     v.visited = True
                     visited_vertices.append(v)
-                    v.node = pydot.Node(name=get_node_name(v,path_name), label=get_node_label(v))
+                    v.node = pydot.Node(name=get_node_name(v,path_name), label=bdd._get_node_label(v))
                     graph.add_node(v.node)
                     graph.add_edge(pydot.Edge(v.node, v.low.node, style="dashed", arrowtype="normal", dir="forward"))
                     graph.add_edge(pydot.Edge(v.node, v.high.node, arrowtype="normal", dir="forward"))
@@ -377,7 +396,7 @@ class BDD(object):
                 if not hasattr(v,"visited") or not v.visited:
                     v.visited = True
                     visited_vertices.append(v)
-                    v.node = pydot.Node(name=get_node_name(v,path_name), label=get_node_label(v),  shape="box")
+                    v.node = pydot.Node(name=get_node_name(v,path_name), label=bdd._get_node_label(v),  shape="box")
                     graph.add_node(v.node)
         
         path_name = "R"
