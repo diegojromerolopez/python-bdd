@@ -9,6 +9,7 @@
 class Vertex(object):
     id = None
     index = None
+    i = None
     value = None
     low = None
     high = None

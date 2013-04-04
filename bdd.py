@@ -43,27 +43,46 @@ class BDD(object):
     # Vertices in an array
     vertices = []
 
+    def print_as_table(self):
+        print "Vertices" + unicode(self.vertices)
+        print "Variables"+unicode(self.variable_names)
+        print "pos.\tindex\tv_name\tlow\thigh\tmark"
+        i = 0
+        for v in self.vertices:
+            #print "{0} (pos={1}, index={2}, mark={3}, high={4}, low={5}, i={6})".format(self._get_node_label(v),v.id,v.index,v.visited,(v.high.id if v.high else "null"),(v.low.id if v.low else "null"),v.i))
+            v_name = self.variable_names[v.i] if v.i < len(self.variable_names) else v.value
+            low_id = v.low.id if v.low is not None else "null"
+            high_id = v.high.id if v.high is not None else "null"
+            #print v.id
+            #print self.variable_names
+            print "{0}\t{1}\t{2}\t{3}\t{4}\t{5}".format(v.id,v.i,v_name,low_id,high_id,v.visited)
+            i += 1
     ####################################################################
     ## Constructor
-    def __init__(self, function=None, values=None, reduce=True):
+    def __init__(self, function=None, variable_order=None, values=None, reduce=True):
 
         ## Given a formula in a string evaluable by Python, gets the function
         ## object that represents it.
-        def get_func(formula_str):
+        def get_func(formula_str, variable_order=None):
             """Gets a function object given a logic formular y Python format"""
             # Gets the arguments of the formula
-            argument_list = re.sub(r'and|or|not|\(|\)', r'', formula_str)
-            argument_list = re.sub(r'\s+',r' ', argument_list).split(" ")
-            argument_list_h = {}
-            for a in argument_list:
-                argument_list_h[a] = True
-            argument_list = argument_list_h.keys()
+            if not variable_order:
+                argument_list = re.sub(r'and|or|not|\(|\)', r'', formula_str)
+                argument_list = argument_list.strip()
+                argument_list = re.sub(r'\s+',r' ', argument_list).split(" ")
+                argument_list_h = {}
+                for a in argument_list:
+                    argument_list_h[a] = True
+                argument_list = argument_list_h.keys()
+            else:
+                argument_list = variable_order
             # Gets a str separated by commas (arguments of the function)
             arguments_str = ', '.join(argument_list)
             parameters_in_function_str = re.sub(r'(\s+|,)+',r'_', arguments_str)
             uuid = str(uuid4()).replace("-","")
             function_name = "formula_{0}_with_{1}_params_{2}".format(uuid,len(argument_list),parameters_in_function_str)
-            exec "def "+function_name+"("+arguments_str+"):   return "+formula_str in globals()
+            code = "def "+function_name+"("+arguments_str+"):   return "+formula_str
+            exec code in globals()
             # Returns the object function
             return eval(function_name)
 
@@ -93,10 +112,11 @@ class BDD(object):
 
         if function:
             if type(function)==str or type(function)==unicode:
-                function = get_func(function)
+                function = get_func(function, variable_order)
             self.function = function
             self.name = function.func_name
             self.variable_names = getargspec(function).args
+            #print self.variable_names
             self.n = len(getargspec(function).args)
             self.root = generate_tree_function(function)
             if reduce:
@@ -210,18 +230,24 @@ class BDD(object):
 
         # Update reference to root vertex (alwayes the last entry in result)
         self.root = result[-1]
-        result_false = result[1]
-        result_true = result[0]
-        result[0] = result_false
-        result[1] = result_true
-        result[0].id=0
-        result[1].id=1
         self.vertices = result
-        for v in self.vertices:
+        
+        if result[1].value is False:
+            result_false = result[1]
+            result_true = result[0]
+            result[0] = result_false
+            result[1] = result_true
+            result[0].id=0
+            result[1].id=1
+        # Leafs has as i-index N (number of variables)
+        result[0].i=self.n
+        result[1].i=self.n
+        self.vertices = result
+        i = 2
+        for i in xrange(2,len(self.vertices)):
+            v = self.vertices[i]
             v.visited = False
-            v.i = self.n
-            if v.index != None:
-                v.i = v.index-1
+            v.i = v.index - 1 
         # this BDD is now reduced
         self.is_reduced = True
 
@@ -272,7 +298,7 @@ class BDD(object):
                 u.low = _apply(v1.low, v2.low, f)
                 u.high = _apply(v1.high, v2.high, f)
             
-            u.erase_children_redundancy()
+            #u.erase_children_redundancy()
             
             cache[key] = u
             return u
