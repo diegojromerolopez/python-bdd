@@ -44,6 +44,7 @@ class BDD(object):
     vertices = []
 
     def print_as_table(self):
+        self.reset()
         print "Vertices" + unicode(self.vertices)
         print "Variables"+unicode(self.variable_names)
         print "pos.\tindex\tv_name\tlow\thigh\tmark"
@@ -136,6 +137,28 @@ class BDD(object):
                     self.reduce()
 
     def reset(self):
+        if len(self.vertices)<2:
+            return False
+        # In vertices we want in
+        # index 0 False
+        # index 1 True
+        if self.vertices[1].value is False:
+            v_false = self.vertices[1]
+            v_true = self.vertices[0]
+            self.vertices[0] = v_false
+            self.vertices[1] = v_true
+            self.vertices[0].id = 0
+            self.vertices[1].id = 1
+        # Leafs has as i-index N (number of variables)
+        self.vertices[0].i = self.n
+        self.vertices[1].i = self.n
+        # Everty other vertex is is its position
+        i = 2
+        for i in xrange(2,len(self.vertices)):
+            v = self.vertices[i]
+            v.i = v.index - 1 
+        
+        # Unvisit all vertices
         for v in self.vertices:
             v.visited = False
 
@@ -188,6 +211,7 @@ class BDD(object):
         # Traverse tree, so that level[i] contains all vertices of level i
         levels = self.traverse()
         levels.reverse()
+        print levels
 
         # Bottom-up iteration over the BDD
         for level in levels:
@@ -232,22 +256,22 @@ class BDD(object):
         self.root = result[-1]
         self.vertices = result
         
-        if result[1].value is False:
-            result_false = result[1]
-            result_true = result[0]
-            result[0] = result_false
-            result[1] = result_true
-            result[0].id=0
-            result[1].id=1
-        # Leafs has as i-index N (number of variables)
-        result[0].i=self.n
-        result[1].i=self.n
-        self.vertices = result
-        i = 2
-        for i in xrange(2,len(self.vertices)):
-            v = self.vertices[i]
-            v.visited = False
-            v.i = v.index - 1 
+        #if result[1].value is False:
+            #result_false = result[1]
+            #result_true = result[0]
+            #result[0] = result_false
+            #result[1] = result_true
+            #result[0].id=0
+            #result[1].id=1
+        ## Leafs has as i-index N (number of variables)
+        #result[0].i=self.n
+        #result[1].i=self.n
+        #self.vertices = result
+        #i = 2
+        #for i in xrange(2,len(self.vertices)):
+            #v = self.vertices[i]
+            #v.visited = False
+            #v.i = v.index - 1 
         # this BDD is now reduced
         self.is_reduced = True
 

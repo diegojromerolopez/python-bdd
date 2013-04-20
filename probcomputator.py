@@ -51,9 +51,6 @@ def get_marginal_prob(v, total_prob, formula_sat_prob, prob, bdd, var_ordering):
             get_marginal_prob(bdd[v].high.id, total_prob, formula_sat_prob, prob, _bdd, var_ordering)
         prob_high = (total_prob[bdd[v].high.id] * formula_sat_prob[v]/2.0) / formula_sat_prob[bdd[v].high.id]
     # 
-    #print "{0} prob_low={1}, prob_high={2}".format(names[v],prob_low,prob_high)
-    #print bdd
-    #print "{0} in total_prob ({1})".format(v,len(total_prob))
     total_prob[v] = prob_low + prob_high
     #print "{0} in prob ({1})".format(bdd[v].id,(prob))
     prob[bdd[v].i] += prob_high
@@ -66,7 +63,6 @@ def get_marginal_prob(v, total_prob, formula_sat_prob, prob, bdd, var_ordering):
     while i<bdd[bdd[v].high.id].i:
         prob[i] += prob_high/2.0
         i += 1
-    #print prob
 
 # Algorithm 1
 def get_prob(bdd):
@@ -76,9 +72,6 @@ def get_prob(bdd):
     bdd_vertices = bdd.vertices
     bdd_length = len(bdd_vertices)
     
-    #print bdd_length
-    #print number_of_literals
-    
     # Probabilidades totales
     total_prob = [0.0 for i in xrange(0,bdd_length)]
     prob = [0.0 for i in xrange(0,number_of_literals)]
@@ -87,8 +80,7 @@ def get_prob(bdd):
     print "Formula SAT Prob, P(psi) = {0}".format(formula_sat_prob)
     # Marginal probabilities
     get_marginal_prob(bdd_length-1, total_prob, formula_sat_prob, prob, bdd, var_ordering)
-    #print "MP(x_i) = {0}".format(prob)
-    #print "{0}".format(["{0} (pos={1}, index={2}, mark={3}, high={4}, low={5}, i={6})".format(bdd._get_node_label(v),v.id,v.index,v.visited,(v.high.id if v.high else "null"),(v.low.id if v.low else "null"),v.i) for v in bdd.vertices])
+
     for i in xrange(0,number_of_literals):
         #print prob[i]
         prob[i] = prob[i]/formula_sat_prob[1]
@@ -106,6 +98,8 @@ def test():
     
     print u"Fórmula: a or b"
     bdd = BDD(function=f1)
+    bdd.print_as_table()
+    return False
     prob = get_prob(bdd)
     print prob
     print prob == [2/3., 2/3.]
